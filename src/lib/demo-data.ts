@@ -1,15 +1,28 @@
 /**
  * Ten weeks of believable sample data, built around the person's own answers (drug, dose,
- * time, weights), so every screen can be seen full. Deterministic: the same answers give the
+ * time, weights), plus two weeks of meals and water, so every screen can be seen full. Deterministic: the same answers give the
  * same data. Symptoms peak a day or two after each injection and ease as the weeks go by,
  * which is the pattern people usually report on these medicines.
  *
  * Demo only. Replaces everything that was logged.
  */
 
-import { newId, replaceAppData, type CheckIn, type InjectionLog, type Measurement, type WeightLog } from "./app-store";
+import {
+  newId,
+  replaceAppData,
+  type CheckIn,
+  type InjectionLog,
+  type MealLog,
+  type Measurement,
+  type WaterLog,
+  type WeightLog,
+} from "./app-store";
+import { findFood, itemOf } from "./foods";
 import { addDays, daysBetween, weekdayOf } from "./jalali";
+import { setRead } from "./learn-store";
+import { LESSON_PATH } from "./learn";
 import { findMedication } from "./medications";
+import { clockNow, type MealType } from "./nutrition";
 import { setOnboarding, type OnboardingState } from "./onboarding-store";
 import { SITES } from "./plan";
 import type { Appetite, Mood, SymptomId } from "./symptoms";
@@ -45,7 +58,40 @@ const WEEKLY_ODDS: Partial<Record<SymptomId, number[]>> = {
   dizziness: [0.02, 0.03, 0.02, 0.02, 0.01, 0.01, 0.01],
 };
 
-export function loadDemoData(o: OnboardingState, today: string) {
+// Meals people on these medicines actually log: smaller portions, protein most days.
+type Plan = { title: string; items: [string, number][] };
+const MEAL_PLANS: Record<MealType, Plan[]> = {
+  breakfast: [
+    { title: "نون و پنیر و گردو", items: [["sangak", 1.5], ["cheese", 1], ["walnut", 2]] },
+    { title: "املت گوجه", items: [["omelet", 1], ["barbari", 1]] },
+    { title: "تخم‌مرغ آب‌پز و نون", items: [["egg", 2], ["sangak", 1]] },
+    { title: "فرنی جو دوسر و موز", items: [["oats", 1], ["banana", 0.5]] },
+    { title: "ماست یونانی و موز", items: [["greek", 1], ["banana", 0.5]] },
+  ],
+  lunch: [
+    { title: "چلو مرغ", items: [["polo", 1.5], ["chicken", 1], ["shirazi", 1]] },
+    { title: "جوجه‌کباب با سالاد", items: [["joojeh", 1], ["polo", 1], ["salad", 1]] },
+    { title: "قورمه‌سبزی با برنج", items: [["ghormeh", 1], ["polo", 1.5]] },
+    { title: "عدس‌پلو و ماست", items: [["adaspolo", 0.5], ["yogurt", 1]] },
+    { title: "ماهی و برنج", items: [["fish", 1], ["polo", 1], ["sabzi", 1]] },
+  ],
+  snack: [
+    { title: "ماست و خیار", items: [["mastkhiar", 1]] },
+    { title: "موز و بادام", items: [["banana", 1], ["almonds", 0.5]] },
+    { title: "سیب", items: [["apple", 1]] },
+    { title: "شیک موز و شیر", items: [["shake", 1]] },
+  ],
+  dinner: [
+    { title: "عدسی", items: [["adasi", 1], ["sangak", 1]] },
+    { title: "سوپ جو", items: [["soup", 1], ["toast", 1]] },
+    { title: "کتلت و سالاد شیرازی", items: [["kotlet", 2], ["lavash", 1], ["shirazi", 1]] },
+    { title: "نیمرو و سبزی", items: [["friedegg", 2], ["sangak", 1], ["sabzi", 1]] },
+    { title: "جوجه‌کباب با سالاد", items: [["joojeh", 1], ["salad", 1]] },
+  ],
+};
+const MEAL_TIMES: Record<MealType, [number, number]> = { breakfast: [8, 30], lunch: [13, 30], snack: [17, 0], dinner: [20, 30] };
+
+export function loadDemoData(o: OnboardingState, today: string, now = new Date()) {
   const rand = random(1405);
   const pick = <T>(items: T[]) => items[Math.floor(rand() * items.length)];
 
@@ -130,6 +176,38 @@ export function loadDemoData(o: OnboardingState, today: string) {
       waistCm: Math.round((startWaist - (start - w.kg) * 0.85) * 2) / 2,
     }));
 
+  // Two weeks of meals and water. Today only has the meals whose time has passed.
+  const meals: MealLog[] = [];
+  const water: WaterLog[] = [];
+  const nowClock = clockNow(now);
+  for (let d = 13; d >= 0; d--) {
+    const date = addDays(today, -d);
+    const order: MealType[] = rand() < 0.65 ? ["breakfast", "lunch", "snack", "dinner"] : ["breakfast", "lunch", "dinner"];
+    for (const type of order) {
+      if (d > 0 && rand() < 0.08) continue; // a meal forgotten now and then
+      const [h, m] = MEAL_TIMES[type];
+      const minutes = h * 60 + m + Math.round(((rand() - 0.5) * 60) / 5) * 5;
+      const time = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
+      if (d === 0 && time > nowClock) continue;
+      const plan = pick(MEAL_PLANS[type]);
+      meals.push({
+        id: newId() + date + type,
+        date,
+        time,
+        type,
+        title: plan.title,
+        items: plan.items.flatMap(([id, amount]) => {
+          const food = findFood(id);
+          return food ? [itemOf(food, amount)] : [];
+        }),
+        source: rand() < 0.8 ? "photo" : "manual",
+      });
+    }
+    const glasses = d === 0 ? Math.min(8, Math.max(1, Math.round((now.getHours() - 7) / 2))) : 4 + Math.floor(rand() * 5);
+    water.push({ date, glasses });
+  }
+  setRead(LESSON_PATH.slice(0, 3));
+
   setOnboarding({
     journey: "a-while",
     medication: { id: med.id },
@@ -144,5 +222,5 @@ export function loadDemoData(o: OnboardingState, today: string) {
     },
     weight: { today: end, start },
   });
-  replaceAppData({ seeded: true, injections, weights, checkIns, measurements });
+  replaceAppData({ seeded: true, injections, weights, checkIns, measurements, meals, water });
 }

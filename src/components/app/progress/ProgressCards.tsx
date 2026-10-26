@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { WeightChart } from "./WeightChart";
+import { GhostChart } from "@/components/app/GhostChart";
 import { Sparkline } from "@/components/app/Sparkline";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -167,23 +168,38 @@ export function WeightCard({ today }: { today: string }) {
                 onScrub={setScrub}
               />
             ) : (
-              <p className="grid h-40 place-items-center text-center text-caption text-balance text-text-secondary">
-                توی این بازه فقط یه وزن ثبت شده؛ بازه‌ی بزرگ‌تری رو ببین.
-              </p>
+              <GhostChart height={208}>
+                <p className="text-body-strong text-text-primary">توی این بازه فقط یه وزن ثبت شده</p>
+                <button
+                  type="button"
+                  onClick={() => setRange("all")}
+                  className="-mt-1 h-10 rounded-full bg-surface px-4 text-label text-text-brand shadow-card active:bg-surface-brand-subtle"
+                >
+                  دیدن همه‌ی وزن‌ها
+                </button>
+              </GhostChart>
             )}
           </div>
-          <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-caption-small text-text-secondary">
-            <span className="flex items-center gap-1.5">
-              <span aria-hidden="true" className="h-2 w-[3px] rounded-full bg-violet-300" />
-              تزریق
-            </span>
-            <span>برای دیدن هر روز، روی نمودار بکش</span>
-          </p>
+          {inRange.length > 1 ? (
+            <p className="mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-caption-small text-text-secondary">
+              <span className="flex items-center gap-1.5">
+                <span aria-hidden="true" className="h-2 w-[3px] rounded-full bg-violet-300" />
+                تزریق
+              </span>
+              <span>برای دیدن هر روز، روی نمودار بکش</span>
+            </p>
+          ) : null}
         </>
       ) : (
-        <p className="mt-4 rounded-[18px] bg-surface-brand-subtle px-4 py-6 text-center text-caption text-balance text-text-secondary">
-          هر چند روز یه بار خودت رو وزن کن؛ از وزن بعدی، نمودارت اینجا ساخته می‌شه.
-        </p>
+        // Before the second weigh-in: what the chart will be, blurred, with what makes it appear.
+        <div className="mt-4">
+          <GhostChart height={196}>
+            <p className="text-body-strong text-text-primary">نمودار وزنت اینجا ساخته می‌شه</p>
+            <p className="-mt-2 text-caption text-balance text-text-secondary">
+              هر چند روز یه بار خودت رو وزن کن؛ از وزن دوم، خط روندت پیدا می‌شه.
+            </p>
+          </GhostChart>
+        </div>
       )}
 
       <Button variant="secondary" className="mt-4" onClick={() => openSheet("weight")}>

@@ -6,6 +6,7 @@ import { LogHero } from "./LogHero";
 import { InsightSummary, MoodTrend } from "./MoodAnalysis";
 import { MoodWeek } from "./MoodWeek";
 import { MonthHeatmap } from "./MonthHeatmap";
+import { SymptomHelp } from "./SymptomHelp";
 import { CycleInsight, SymptomFrequency } from "./SymptomInsights";
 import { AppHeader } from "@/components/app/AppHeader";
 import { DaySheet } from "@/components/app/DaySheet";
@@ -30,8 +31,9 @@ const PERIODS: { value: Period; label: string }[] = [
 ];
 
 /**
- * How the person feels, in two clear halves. Logging first: today on the brand card, and
- * this week by face with «+» on the days still open. Then analysis for the chosen period:
+ * How the person feels, in two clear halves. Logging first: today on the brand card, help for
+ * today's symptoms (what to eat, the assistant), and this week by face with «+» on the days
+ * still open. Then analysis for the chosen period:
  * a plain-language summary, mood over time, the most common symptoms; and the patterns that
  * need all the data: symptoms through the injection cycle and the calendar.
  */
@@ -66,6 +68,7 @@ export function SymptomsScreen() {
             {RED_FLAG_NOTE}
           </p>
         ) : null}
+        <SymptomHelp checkIn={todayCheckIn} />
         <MoodWeek today={today} onOpen={setDay} />
 
         <section aria-labelledby="analysis-title" className="flex flex-col gap-3 pt-3">

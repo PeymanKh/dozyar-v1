@@ -47,6 +47,8 @@ export function CountdownRing({
           stroke={light ? "white" : "var(--color-brand)"}
           strokeWidth={stroke}
           strokeLinecap="round"
+          // At zero a round cap would still draw a dot; nothing done shows nothing.
+          opacity={progress > 0 ? 1 : 0}
           initial={{ pathLength: reduce ? progress : 0 }}
           animate={{ pathLength: progress }}
           transition={{ type: "spring", bounce: 0, duration: 1.1, delay: 0.1 }}

@@ -17,8 +17,8 @@ const SECTIONS = [
 ];
 
 /**
- * Screen 9 (optional). Picks the first tips on Today, and tells people these worries are
- * common. Same cards as the other screens, as checkboxes: any number can be chosen, and
+ * Screen 9 (optional). Picks the first questions the assistant offers (on Today and in the
+ * chat), and tells people these worries are common. Same cards as the other screens, as checkboxes: any number can be chosen, and
  * «ادامه» works with none (so there is no separate skip).
  */
 export function WorriesStep() {

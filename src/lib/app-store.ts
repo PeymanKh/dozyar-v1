@@ -2,13 +2,14 @@
 
 import { useSyncExternalStore } from "react";
 import { isoOfJalali } from "./jalali";
+import type { MealType, Nutrients } from "./nutrition";
 import type { InjectionSite, OnboardingState } from "./onboarding-store";
 import type { Appetite, Mood, SymptomId } from "./symptoms";
 
 /**
- * Everything logged after onboarding: injections, weights, daily check-ins and waist
- * measurements. Lives in memory and mirrors to localStorage (same pattern as the
- * onboarding store). Dates are Gregorian ISO "YYYY-MM-DD", times "HH:MM", shown as Jalali.
+ * Everything logged after onboarding: injections, weights, daily check-ins, waist
+ * measurements, meals and water. Lives in memory and mirrors to localStorage (same pattern as
+ * the onboarding store). Dates are Gregorian ISO "YYYY-MM-DD", times "HH:MM", shown as Jalali.
  *
  * MOCK: moves to the Django API once it exists.
  */
@@ -24,6 +25,37 @@ export type CheckIn = {
 };
 export type Measurement = { id: string; date: string; waistCm: number };
 
+/**
+ * One food in a meal: what it is, how many of its unit («۲ کفگیر»), and its nutrients per unit,
+ * copied in when logged so a meal keeps its numbers even if the food list changes.
+ */
+export type MealItem = {
+  /** From the food list, or null for something typed in. */
+  foodId: string | null;
+  name: string;
+  emoji: string;
+  unit: string;
+  amount: number;
+  per: Nutrients;
+};
+
+export type MealLog = {
+  id: string;
+  date: string;
+  time: string;
+  type: MealType;
+  /** What the meal is called, e.g. «چلو مرغ» (from the photo or the recipe). */
+  title?: string;
+  items: MealItem[];
+  /** The photo, kept on the phone (meal-photos). */
+  photoId?: string;
+  source: "photo" | "manual" | "recipe";
+  recipeId?: string;
+};
+
+/** Glasses of water on a day (one entry per day). */
+export type WaterLog = { date: string; glasses: number };
+
 export type AppData = {
   /** Set once the onboarding answers have been turned into the first logs. */
   seeded: boolean;
@@ -31,10 +63,20 @@ export type AppData = {
   weights: WeightLog[];
   checkIns: CheckIn[];
   measurements: Measurement[];
+  meals: MealLog[];
+  water: WaterLog[];
 };
 
 const KEY = "dozyar.data";
-const EMPTY: AppData = { seeded: false, injections: [], weights: [], checkIns: [], measurements: [] };
+const EMPTY: AppData = {
+  seeded: false,
+  injections: [],
+  weights: [],
+  checkIns: [],
+  measurements: [],
+  meals: [],
+  water: [],
+};
 const listeners = new Set<() => void>();
 let state: AppData | null = null;
 
@@ -70,6 +112,11 @@ function subscribe(listener: () => void) {
 
 export function useAppData(): AppData {
   return useSyncExternalStore(subscribe, read, () => EMPTY);
+}
+
+/** The data right now, outside render (event handlers, timers). */
+export function readAppData(): AppData {
+  return read();
 }
 
 /** crypto.randomUUID needs a secure context, which a phone on the LAN (http) is not. */
@@ -145,6 +192,45 @@ export function restoreMeasurement(m: Measurement) {
 
 export function removeMeasurement(id: string) {
   update((d) => ({ ...d, measurements: d.measurements.filter((m) => m.id !== id) }));
+}
+
+// Meals
+
+export function logMeal(entry: Omit<MealLog, "id">): MealLog {
+  const meal = { ...entry, id: newId() };
+  update((d) => ({ ...d, meals: [...d.meals, meal].sort(byDateTime) }));
+  return meal;
+}
+
+/** Replaces a meal with an edited copy (same id). */
+export function saveMeal(meal: MealLog) {
+  update((d) => ({ ...d, meals: [...d.meals.filter((m) => m.id !== meal.id), meal].sort(byDateTime) }));
+}
+
+export function removeMeal(id: string): MealLog | undefined {
+  const removed = read().meals.find((m) => m.id === id);
+  update((d) => ({ ...d, meals: d.meals.filter((m) => m.id !== id) }));
+  return removed;
+}
+
+export function restoreMeal(meal: MealLog) {
+  saveMeal(meal);
+}
+
+// Water
+
+export function waterOn(water: WaterLog[], date: string): number {
+  return water.find((w) => w.date === date)?.glasses ?? 0;
+}
+
+export function setWater(date: string, glasses: number) {
+  const next = Math.max(0, Math.min(20, Math.round(glasses)));
+  update((d) => ({
+    ...d,
+    water: [...d.water.filter((w) => w.date !== date), ...(next ? [{ date, glasses: next }] : [])].sort((a, b) =>
+      a.date.localeCompare(b.date),
+    ),
+  }));
 }
 
 /**

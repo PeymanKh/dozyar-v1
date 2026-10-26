@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { ChevronBack } from "@/components/ui/icons";
+import { ChevronBack, Sparkles } from "@/components/ui/icons";
 import { useOnboarding } from "@/lib/onboarding-store";
 
 /** True once the page has scrolled past `offset` px (the large title is gone). */
@@ -31,9 +31,10 @@ function useScrolledPast(offset: number) {
 
 /**
  * Screen header in the iOS large-title style: a small caption over a large title on the
- * start side, and one round button on the left (the profile on tab screens, back on pushed
- * screens). Once the title scrolls away, a compact glass bar takes over with the title in
- * small type, so the person always knows where they are.
+ * start side, and round buttons on the left: on tab screens the assistant and the profile
+ * (so both are one tap away from every tab), on pushed screens back. Once the title scrolls
+ * away, a compact glass bar takes over with the title in small type, so the person always
+ * knows where they are.
  */
 export function AppHeader({
   title,
@@ -49,7 +50,14 @@ export function AppHeader({
   back?: string | true;
 }) {
   const scrolled = useScrolledPast(52);
-  const button = back ? <BackButton href={back} /> : <ProfileButton />;
+  const button = back ? (
+    <BackButton href={back} />
+  ) : (
+    <div className="flex shrink-0 items-center gap-2 self-start">
+      <AssistantButton />
+      <ProfileButton />
+    </div>
+  );
 
   // On <body>: the page frame animates its transform, which would trap a fixed bar.
   const bar = (
@@ -59,10 +67,10 @@ export function AppHeader({
         scrolled ? "opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
-      <div className="bar-glass flex items-center justify-between gap-3 px-5 pt-[max(env(safe-area-inset-top),10px)] pb-2.5">
-        <span className="size-11 shrink-0" aria-hidden="true" />
+      <div className="bar-glass grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-5 pt-[max(env(safe-area-inset-top),10px)] pb-2.5">
+        <span aria-hidden="true" />
         <span className="truncate text-body-strong text-text-primary">{compactTitle ?? title}</span>
-        {scrolled ? button : <span className="size-11 shrink-0" />}
+        <span className="flex justify-end">{scrolled ? button : <span className="size-11" />}</span>
       </div>
     </div>
   );
@@ -94,6 +102,19 @@ function BackButton({ href }: { href: string | true }) {
     >
       <ChevronBack size={22} />
     </motion.button>
+  );
+}
+
+/** The assistant, one tap from every tab. */
+function AssistantButton() {
+  return (
+    <Link
+      href="/chat"
+      aria-label="دستیار دوزیار"
+      className="glass grid size-11 shrink-0 place-items-center rounded-full text-text-brand transition-transform active:scale-95"
+    >
+      <Sparkles size={20} />
+    </Link>
   );
 }
 

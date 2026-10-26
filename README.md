@@ -59,32 +59,67 @@ and sized with `scripts/prep_icon.py`.
 
 ## The app
 
-After onboarding, four tabs in a floating glass tab bar, a round «+» beside it for quick logging
-(injection, check-in, weight, waist), and two pushed screens. Signed-in visitors to `/` go
-straight back to where they were.
+After onboarding, five tabs in a floating glass tab bar, a round «+» beside it for quick logging
+(food photo, injection, check-in, weight, a glass of water, waist), and pushed screens. Every tab
+header has the assistant (✨) and the profile one tap away. Signed-in visitors to `/` go straight
+back to where they were.
 
 | Route | Screen |
 | --- | --- |
-| `/today` | The next injection on the brand card (countdown ring, due, late, logged today, no drug yet), this week with injection and check-in marks, today's check-in, weight and treatment tiles, one tip, the doctor report |
-| `/treatment` | Drug, dose and time (recorded, never suggested), body map with the suggested next spot, dose steps, every injection (tap to delete, with undo) |
-| `/symptoms` | Log first: today on the brand card (five faces, or today's entry with «ویرایش») and this week by face with «+» on open days. Then analysis for 7, 30 or 90 days: a plain-language summary, mood over time (daily dots, rolling trend, average, injections), most common symptoms; and patterns: symptoms through the injection cycle, a five-week calendar |
-| `/progress` | Journey to the goal, weight chart (range switch, drag to read a day, injections and dose changes on the axis), this week, waist, private photos with before/after, every weigh-in |
+| `/today` | The next injection on the brand card (countdown ring, due, late, logged today, no drug yet), today's food (protein ring, fiber meter, water glasses to tap, today's meals, the camera), today's check-in, weight and treatment tiles, the assistant with two questions that fit today, the next lesson, the doctor report |
+| `/food` | تغذیه. Today against the targets on the brand card with «عکس غذا» / «بدون عکس», today's meals (tap to change or delete) and water, protein this week against the target, «حالت خوب نیست؟ چی بخوری» (a guide per side effect; the one matching a recent check-in comes first), recipes that suit the person now, the food lessons |
+| `/food/guide/[id]` | One side effect: why it happens, what usually helps, what to go easy on, habits, when to call the doctor, matching recipes, ask the assistant |
+| `/food/recipes` | Every recipe with filters (`?tag=protein`, `gentle`, `fiber`, `small`, `breakfast`, `quick`) |
+| `/food/recipes/[id]` | A recipe: nutrients per serving, why it suits the treatment, ingredients to tick off (scaled by a servings stepper), steps, «خوردمش؛ ثبتش کن» logs one serving |
+| `/treatment` | Drug, dose and time (recorded, never suggested), body map with the suggested next spot, dose steps, every injection (tap to delete, with undo), lessons about the medicine |
+| `/symptoms` | Log first: today on the brand card (five faces, or today's entry with «ویرایش»), help for today's symptoms (the food guide, the assistant), and this week by face with «+» on open days. Then analysis for 7, 30 or 90 days: a plain-language summary, mood over time (daily dots, rolling trend, average, injections), most common symptoms; and patterns: symptoms through the injection cycle, a five-week calendar |
+| `/progress` | Journey to the goal, weight chart (range switch, drag to read a day, injections and dose changes on the axis; a blurred sample chart with what makes it appear until there are two weigh-ins), this week, waist, private photos with before/after, every weigh-in |
+| `/chat` | The assistant as a conversation: starter questions from the person's own data and worries, answers written out word by word (stoppable), links into the app, follow-up questions, red-flag and crisis answers, a new conversation with undo; `?q=` asks a question sent from elsewhere |
+| `/learn` | Lessons as a path (how far along, the next one) and by topic: starting treatment, side effects, food, lifestyle, after treatment |
+| `/learn/[id]` | A lesson set for reading; reaching the takeaways marks it read; the next lesson and «از دستیار بپرس» |
 | `/check-in` | Mood, symptoms with severity, appetite, note; `?date=` for a past day, `?mood=` from a face tapped on Today |
-| `/report` | One-page summary for the doctor; «ذخیره به‌صورت PDF» prints it on A4, or share it as text |
-| `/profile` | About me, reminders, data export, sample data, erase, sign out |
+| `/report` | One-page summary for the doctor, now with food (protein, fiber and water on the days logged); «ذخیره به‌صورت PDF» prints it on A4, or share it as text |
+| `/profile` | About me, daily food targets, reminders, the assistant and the lessons, data export, sample data, erase, sign out |
+
+Logging a meal happens in one sheet (`src/components/app/sheets/MealSheet.tsx`), opened from any
+«عکس غذا» button: the photo is recognised (a short scan over the picture), the foods found are
+listed with an amount each, ready to correct (− / +, remove, add from the food list), with the
+meal's protein, fiber, energy, carbs and fat, the time and which meal. The photo input lives
+once in the app shell (`MealCamera`); buttons call `pickMealPhoto()` inside the tap.
+
+Food targets are protein, fiber and water only, on purpose: no calorie goal. Calories are shown
+as information. Protein starts at 1.2 g per kg of the goal weight (60 to 120 g), fiber at 25 g
+(30 g for men), water at 8 glasses; the person changes them in Profile.
 
 Everything is stored on the phone for now (MOCK until the Django API exists):
 
-- `src/lib/onboarding-store.ts`: the answers (drug, current dose, schedule, goal, reminders)
-- `src/lib/app-store.ts`: injections, weights, check-ins and waist measurements, seeded once from
-  the answers
+- `src/lib/onboarding-store.ts`: the answers (drug, current dose, schedule, goal, reminders, food targets)
+- `src/lib/app-store.ts`: injections, weights, check-ins, waist measurements, meals and water,
+  seeded once from the answers
 - `src/lib/photo-store.ts`: progress photos in IndexedDB, scaled down, never uploaded
+- `src/lib/meal-photos.ts`: meal photos in IndexedDB, small, never uploaded
+- `src/lib/chat-store.ts` and `src/lib/learn-store.ts`: the conversation and the lessons read
+
+Two parts are stand-ins for services that come with the backend:
+
+- `src/lib/food-ai.ts` recognises a meal from its photo: it waits like a network call and picks a
+  believable Iranian meal for the time of day (the same one for the same photo). Replace it with
+  the vision model behind the Django API; the return shape stays the same. With a real model the
+  photo leaves the phone, so the wording on the review screen changes with it.
+- `src/lib/assistant.ts` answers questions: keywords pick a topic, and each topic has a written
+  answer that reads the person's own data. Replace `answer()` with the language model behind the
+  API; keep its rules (never a dose, red flags first, crisis lines, the doctor decides).
 
 The next dose is one interval (7 days or 1 day) after the last logged injection, at the planned
 time; the suggested spot is the one rested longest. Profile → «داده‌ی نمونه» fills ten weeks of
-believable data around the person's own answers, to see every screen full.
+believable data around the person's own answers (and two weeks of meals and water), to see every
+screen full.
 
 Medical guardrails: the app records doses and never suggests or changes one; a late injection
-points to the doctor; severe vomiting, diarrhoea or dizziness shows a short safety note; tips are
-everyday advice; there is no BMI anywhere. Tips, safety wording and the drug list are pending
-review by a doctor and a pharmacist.
+points to the doctor; severe vomiting, diarrhoea or dizziness shows a short safety note; the
+assistant sends dose questions to the doctor, answers red flags (severe pain, breathing, allergy
+signs) with emergency 115 first, and answers thoughts of self-harm with the 1480 and 123 lines;
+there is no BMI anywhere and no calorie goal. Pending review by a doctor, a pharmacist and a
+dietitian: the drug list (`medications.ts`), the food guide per side effect (`food-guide.ts`), the
+lessons (`learn.ts`), the assistant's answers (`assistant.ts`), the food values (`foods.ts`) and
+the recipes (`recipes.ts`). Each file says so at the top.

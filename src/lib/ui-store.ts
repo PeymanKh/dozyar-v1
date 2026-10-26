@@ -49,7 +49,7 @@ export function useToast(): Toast | null {
 
 // Logging sheets
 
-export type AppSheet = "quick" | "injection" | "weight" | "waist" | null;
+export type AppSheet = "quick" | "injection" | "weight" | "waist" | "meal" | null;
 
 const sheetStore = createStore<AppSheet>(null);
 
@@ -63,6 +63,41 @@ export function closeSheet() {
 
 export function useAppSheet(): AppSheet {
   return useSyncExternalStore(sheetStore.subscribe, sheetStore.get, () => null);
+}
+
+// Logging a meal
+
+/**
+ * What the meal sheet opens with: a photo to recognise, nothing (adding food by hand), or a
+ * meal already logged (to change or delete it).
+ */
+export type MealDraft = { kind: "photo"; photo: Blob } | { kind: "manual" } | { kind: "edit"; mealId: string };
+
+/** `seq` tells one opening from the next, so the sheet starts fresh each time. */
+const mealDraftStore = createStore<(MealDraft & { seq: number }) | null>(null);
+let mealSeq = 0;
+
+export function openMeal(draft: MealDraft) {
+  mealDraftStore.set({ ...draft, seq: ++mealSeq });
+  sheetStore.set("meal");
+}
+
+export function useMealDraft(): (MealDraft & { seq: number }) | null {
+  return useSyncExternalStore(mealDraftStore.subscribe, mealDraftStore.get, () => null);
+}
+
+/**
+ * The one hidden photo input lives in the app shell; any «عکس غذا» button calls this inside
+ * its tap, which is when browsers allow opening the camera or the photo library.
+ */
+let mealInput: HTMLInputElement | null = null;
+
+export function registerMealInput(el: HTMLInputElement | null) {
+  mealInput = el;
+}
+
+export function pickMealPhoto() {
+  mealInput?.click();
 }
 
 /** A short tap of the motor where the phone supports it (Android); harmless elsewhere. */

@@ -7,6 +7,7 @@ import { InjectionHistory } from "./InjectionHistory";
 import { ChangeMedicationSheet, DoseSheet } from "./TreatmentSheets";
 import { AppHeader } from "@/components/app/AppHeader";
 import { BodyMap, SITE_LABEL } from "@/components/app/BodyMap";
+import { LessonRow } from "@/components/app/learn/LessonRow";
 import { Screen } from "@/components/app/Screen";
 import { DrugFlag, DrugName } from "@/components/onboarding/MedicationStep";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +18,7 @@ import { TimeSheet } from "@/components/ui/PickerSheets";
 import { useAppData } from "@/lib/app-store";
 import { toFaDigits } from "@/lib/digits";
 import { daysBetween, formatJalali, isoOf, WEEKDAYS, weekdayOf } from "@/lib/jalali";
+import { findLesson } from "@/lib/learn";
 import { findMedication, RHYTHM_GROUP } from "@/lib/medications";
 import { setOnboarding, useOnboarding } from "@/lib/onboarding-store";
 import { formatMg, formatTime, medicationName, rhythmOf } from "@/lib/plan";
@@ -37,7 +39,8 @@ type TreatmentSheet = "drug" | "dose" | "time" | null;
 
 /**
  * The treatment: which drug and dose (recorded, never suggested), when it is injected,
- * where the next injection could go, how the dose has stepped up, and every injection.
+ * where the next injection could go, how the dose has stepped up, every injection, and the
+ * lessons about the medicine itself.
  */
 export function TreatmentScreen() {
   const now = useNow();
@@ -79,6 +82,15 @@ export function TreatmentScreen() {
         <div className="pt-2">
           <SectionTitle>تاریخچه‌ی تزریق</SectionTitle>
           <InjectionHistory />
+        </div>
+
+        <div className="pt-2">
+          <SectionTitle href="/learn">یادگیری درباره‌ی درمان</SectionTitle>
+          <Card className="divide-y divide-violet-100 overflow-hidden">
+            {["how-it-works", "injection-basics", "storage"].map((id) => (
+              <LessonRow key={id} lesson={findLesson(id)!} />
+            ))}
+          </Card>
         </div>
       </div>
 

@@ -11,6 +11,7 @@ import { useAppData, type AppData } from "@/lib/app-store";
 import { toFaDigits } from "@/lib/digits";
 import { addDays, daysBetween, formatJalali, isoOf, jalaliOf } from "@/lib/jalali";
 import { findMedication, RHYTHM_LABEL } from "@/lib/medications";
+import { formatGrams, periodNutrition, targetsFor } from "@/lib/nutrition";
 import { useOnboarding, type OnboardingState } from "@/lib/onboarding-store";
 import { formatClock, formatKg, formatMg, formatTime, medicationName, rhythmOf } from "@/lib/plan";
 import { averageMood, daysSinceInjection, symptomCounts, weightOn } from "@/lib/stats";
@@ -30,8 +31,8 @@ const fa1 = (n: number) => toFaDigits(String(Math.round(n * 10) / 10)).replace("
 
 /**
  * A one-page summary for the doctor, laid out like paper: who, which treatment and dose
- * steps, injections and how regular they were, weight, symptoms and when they come, and the
- * person's own notes. Saved as PDF through the browser's print, or shared as text.
+ * steps, injections and how regular they were, weight, symptoms and when they come, food
+ * (protein, fiber, water on the days logged), and the person's own notes. Saved as PDF through the browser's print, or shared as text.
  * Only facts the person logged; no interpretation, no BMI, and a closing disclaimer.
  */
 export function ReportScreen() {
@@ -111,6 +112,8 @@ function Report({ o, data, from, today }: { o: OnboardingState; data: AppData; f
     .slice(-4)
     .reverse();
   const age = o.about ? jalaliOf(today).jy - o.about.birthYear : null;
+  const food = periodNutrition(data.meals, data.water, from, today);
+  const targets = targetsFor(o, data.weights);
 
   // For each symptom, the day after the injection it was most often logged.
   const typicalDay = (id: string) => {
@@ -252,6 +255,27 @@ function Report({ o, data, from, today }: { o: OnboardingState; data: AppData; f
         ) : null}
       </Section>
 
+      {food.daysLogged || food.waterDays ? (
+        <Section title="تغذیه">
+          <Facts
+            rows={[
+              ["روزهای ثبت غذا", `${toFaDigits(food.daysLogged)} از ${toFaDigits(daysBetween(from, today) + 1)} روز`],
+              [
+                "پروتئین",
+                food.daysLogged
+                  ? `میانگین ${formatGrams(food.protein)} گرم در روز (هدف ${toFaDigits(targets.protein)} گرم)`
+                  : "—",
+              ],
+              ["فیبر", food.daysLogged ? `میانگین ${formatGrams(food.fiber)} گرم در روز` : "—"],
+              ["آب", food.waterDays ? `میانگین ${fa1(food.water)} لیوان در روز` : "—"],
+            ]}
+          />
+          <p className="mt-1.5 text-caption-small text-text-tertiary">
+            میانگین‌ها فقط از روزهایی که ثبت شده‌اند؛ مقدارها از عکس غذا تخمین زده شده‌اند.
+          </p>
+        </Section>
+      ) : null}
+
       {notes.length ? (
         <Section title="یادداشت‌های بیمار">
           <ul className="flex flex-col gap-1.5">
@@ -366,6 +390,7 @@ function reportText(o: OnboardingState, data: AppData, from: string, today: stri
   const firstW = weightOn(data.weights, from) ?? data.weights.find((w) => w.date >= from)?.kg;
   const lastW = data.weights.at(-1)?.kg;
   const symptoms = symptomCounts(data.checkIns, from, today);
+  const food = periodNutrition(data.meals, data.water, from, today);
   const lines = [
     `گزارش درمان دوزیار: ${o.name?.trim() ?? ""}`,
     `${formatJalali(from, false)} تا ${formatJalali(today, false)}`,
@@ -377,6 +402,9 @@ function reportText(o: OnboardingState, data: AppData, from: string, today: stri
     symptoms.length
       ? `علائم: ${symptoms.map((s) => `${s.label} ${toFaDigits(s.days)} روز (حداکثر ${SEVERITY_LABEL[s.worst]})`).join("، ")}`
       : "علائم: موردی ثبت نشده",
+    food.daysLogged
+      ? `تغذیه: میانگین پروتئین ${formatGrams(food.protein)} گرم و فیبر ${formatGrams(food.fiber)} گرم در روز (${toFaDigits(food.daysLogged)} روز ثبت)`
+      : "",
     "",
     "داده‌ها را بیمار خودش ثبت کرده است.",
   ];

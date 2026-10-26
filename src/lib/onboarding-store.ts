@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 import type { Rhythm } from "./medications";
+import type { Targets } from "./nutrition";
 
 /**
  * Onboarding answers. Lives in memory and mirrors to localStorage, so a person who leaves
@@ -71,6 +72,8 @@ export type OnboardingState = {
   /** Screen 9. null = not answered yet; [] = nothing or skipped. */
   worries: string[] | null;
   reminders: ReminderAnswer | null;
+  /** Daily food targets the person changed in Profile; absent = the suggestion (nutrition.ts). */
+  nutritionTargets?: Partial<Targets>;
 };
 
 const KEY = "dozyar.onboarding";

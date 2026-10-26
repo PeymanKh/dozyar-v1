@@ -10,7 +10,9 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { ConfirmSheet } from "@/components/ui/ConfirmSheet";
 import {
+  AppleIcon,
   Bell,
+  BookOpen,
   Cake,
   ChevronBack,
   Database,
@@ -20,7 +22,9 @@ import {
   Height,
   LogOut,
   MessageSquare,
+  Minus,
   Moon,
+  Plus,
   Sparkles,
   Target,
   Trash,
@@ -32,6 +36,10 @@ import { TextField } from "@/components/ui/TextField";
 import { Toggle } from "@/components/ui/Toggle";
 import { WheelPicker } from "@/components/ui/WheelPicker";
 import { resetAppData, useAppData } from "@/lib/app-store";
+import { clearChat } from "@/lib/chat-store";
+import { resetLearn } from "@/lib/learn-store";
+import { clearMealPhotos } from "@/lib/meal-photos";
+import { defaultTargets, targetsFor, type Targets } from "@/lib/nutrition";
 import { clearPhotos } from "@/lib/photo-store";
 import { loadDemoData } from "@/lib/demo-data";
 import { toFaDigits } from "@/lib/digits";
@@ -46,7 +54,7 @@ import {
 import { formatKg } from "@/lib/plan";
 import { toast } from "@/lib/ui-store";
 
-type ProfileSheet = "name" | "year" | "height" | "goal" | "demo" | "erase" | "signout" | null;
+type ProfileSheet = "name" | "year" | "height" | "goal" | "targets" | "demo" | "erase" | "signout" | null;
 
 const DEFAULT_REMINDERS: ReminderAnswer = { discreet: true, nightBefore: false, smsBackup: false, channel: "off" };
 
@@ -57,7 +65,8 @@ function formatMobile(mobile: string) {
 
 /**
  * The person and their settings, in grouped rows like iOS Settings: about me (each row
- * opens a small sheet), reminders (switches), data (report, export, sample data, erase),
+ * opens a small sheet), daily food targets, reminders (switches), help (the assistant and the
+ * lessons), data (report, export, sample data, erase),
  * and signing out. The one disclaimer that matters closes the page.
  */
 export function ProfileScreen() {
@@ -95,7 +104,8 @@ export function ProfileScreen() {
     URL.revokeObjectURL(url);
   }
 
-  const logged = data.injections.length + data.weights.length + data.checkIns.length;
+  const logged = data.injections.length + data.weights.length + data.checkIns.length + data.meals.length;
+  const targets = targetsFor(o, data.weights);
 
   return (
     <Screen pushed>
@@ -136,6 +146,15 @@ export function ProfileScreen() {
           />
         </Group>
 
+        <Group title="تغذیه">
+          <Row
+            icon={<AppleIcon size={18} />}
+            label="هدف‌های روزانه"
+            value={`پروتئین ${toFaDigits(targets.protein)} گرم`}
+            onClick={() => setSheet("targets")}
+          />
+        </Group>
+
         <Group title="یادآوری‌ها">
           <ToggleRow icon={<Bell size={18} />}>
             <Toggle
@@ -170,11 +189,16 @@ export function ProfileScreen() {
           </ToggleRow>
         </Group>
 
+        <Group title="کمک و یادگیری">
+          <Row icon={<Sparkles size={18} />} label="دستیار دوزیار" onClick={() => router.push("/chat")} />
+          <Row icon={<BookOpen size={18} />} label="یادگیری" onClick={() => router.push("/learn")} />
+        </Group>
+
         <Group title="داده‌ها">
           <Row icon={<FileText size={18} />} label="گزارش برای پزشک" onClick={() => router.push("/report")} />
           <Row icon={<Download size={18} />} label="خروجی داده‌ها" value="فایل JSON" onClick={exportData} />
           <Row
-            icon={<Sparkles size={18} />}
+            icon={<Database size={18} />}
             label="داده‌ی نمونه"
             value="۱۰ هفته، برای نمایش"
             onClick={() => setSheet("demo")}
@@ -214,14 +238,15 @@ export function ProfileScreen() {
         onSave={(height) => o.about && setOnboarding({ about: { ...o.about, height } })}
       />
       <GoalSheet open={sheet === "goal"} onClose={close} />
+      <TargetsSheet open={sheet === "targets"} onClose={close} />
       <ConfirmSheet
         open={sheet === "demo"}
         onClose={close}
         title="داده‌ی نمونه"
         message={
           logged
-            ? "۱۰ هفته تزریق، وزن و علائم نمونه جای ثبت‌های فعلیت رو می‌گیره. فقط برای دیدن صفحه‌ها با داده‌ست."
-            : "۱۰ هفته تزریق، وزن و علائم نمونه ساخته می‌شه تا همه‌ی صفحه‌ها رو با داده ببینی."
+            ? "۱۰ هفته تزریق، وزن و علائم و دو هفته غذای نمونه جای ثبت‌های فعلیت رو می‌گیره. فقط برای دیدن صفحه‌ها با داده‌ست."
+            : "۱۰ هفته تزریق، وزن و علائم و دو هفته غذای نمونه ساخته می‌شه تا همه‌ی صفحه‌ها رو با داده ببینی."
         }
         confirmLabel="ساختن داده‌ی نمونه"
         onConfirm={() => {
@@ -234,12 +259,13 @@ export function ProfileScreen() {
         open={sheet === "erase"}
         onClose={close}
         title="پاک کردن ثبت‌ها"
-        message="همه‌ی تزریق‌ها، وزن‌ها، علائم و عکس‌هایی که ثبت کردی پاک می‌شن و برنمی‌گردن. جواب‌های اولیه‌ات می‌مونن."
+        message="همه‌ی تزریق‌ها، وزن‌ها، علائم، غذاها و عکس‌هایی که ثبت کردی پاک می‌شن و برنمی‌گردن. جواب‌های اولیه‌ات می‌مونن."
         confirmLabel="پاک کن"
         danger
         onConfirm={() => {
           resetAppData();
           clearPhotos();
+          clearMealPhotos();
           toast("ثبت‌ها پاک شدن");
         }}
       />
@@ -253,6 +279,9 @@ export function ProfileScreen() {
         onConfirm={() => {
           resetAppData();
           clearPhotos();
+          clearMealPhotos();
+          clearChat();
+          resetLearn();
           resetOnboarding();
           router.replace("/");
         }}
@@ -419,6 +448,91 @@ function GoalForm({ onDone }: { onDone: () => void }) {
       >
         ذخیره
       </Button>
+    </div>
+  );
+}
+
+function TargetsSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <Sheet open={open} onClose={onClose} title="هدف‌های روزانه">
+      {open ? <TargetsForm onDone={onClose} /> : null}
+    </Sheet>
+  );
+}
+
+const TARGET_ROWS: { key: keyof Targets; label: string; unit: string; step: number; min: number; max: number }[] = [
+  { key: "protein", label: "پروتئین", unit: "گرم", step: 5, min: 40, max: 180 },
+  { key: "fiber", label: "فیبر", unit: "گرم", step: 1, min: 10, max: 50 },
+  { key: "water", label: "آب", unit: "لیوان", step: 1, min: 4, max: 16 },
+];
+
+/**
+ * Protein, fiber and water per day, each with − and +. Starts from the suggestion (from the
+ * goal weight); the person sets their own with their doctor or dietitian. No calorie target.
+ */
+function TargetsForm({ onDone }: { onDone: () => void }) {
+  const o = useOnboarding();
+  const { weights } = useAppData();
+  const suggested = defaultTargets(o, weights);
+  const [values, setValues] = useState<Targets>(() => targetsFor(o, weights));
+  const same = TARGET_ROWS.every((r) => values[r.key] === suggested[r.key]);
+
+  return (
+    <div className="flex flex-col gap-5">
+      <p className="-mt-3 text-center text-caption text-balance text-text-secondary">
+        پیشنهادها از روی وزن هدفت حساب شدن. با پزشک یا متخصص تغذیه‌ات تنظیمشون کن.
+      </p>
+      <div className="flex flex-col divide-y divide-violet-100 rounded-[20px] border border-violet-100">
+        {TARGET_ROWS.map((r) => (
+          <div key={r.key} className="flex items-center gap-3 px-4 py-3">
+            <span className="min-w-0 flex-1">
+              <span className="block text-body-strong text-text-primary">{r.label}</span>
+              <span className="block text-caption text-text-secondary">
+                پیشنهاد: {toFaDigits(suggested[r.key])} {r.unit}
+              </span>
+            </span>
+            <div className="flex items-center gap-1" role="group" aria-label={r.label}>
+              <button
+                type="button"
+                aria-label={`${r.label} کمتر`}
+                disabled={values[r.key] <= r.min}
+                onClick={() => setValues((v) => ({ ...v, [r.key]: Math.max(r.min, v[r.key] - r.step) }))}
+                className="grid size-9 place-items-center rounded-full bg-surface-brand-subtle text-text-brand active:bg-violet-100 disabled:opacity-40"
+              >
+                <Minus size={16} />
+              </button>
+              <span className="w-16 text-center text-label text-text-primary" aria-live="polite">
+                {toFaDigits(values[r.key])} {r.unit}
+              </span>
+              <button
+                type="button"
+                aria-label={`${r.label} بیشتر`}
+                disabled={values[r.key] >= r.max}
+                onClick={() => setValues((v) => ({ ...v, [r.key]: Math.min(r.max, v[r.key] + r.step) }))}
+                className="grid size-9 place-items-center rounded-full bg-surface-brand-subtle text-text-brand active:bg-violet-100 disabled:opacity-40"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="flex flex-col gap-1">
+        <Button
+          onClick={() => {
+            setOnboarding({ nutritionTargets: same ? undefined : values });
+            toast("هدف‌ها ذخیره شد");
+            onDone();
+          }}
+        >
+          ذخیره
+        </Button>
+        {same ? null : (
+          <Button variant="plain" onClick={() => setValues(suggested)}>
+            برگرد به پیشنهاد
+          </Button>
+        )}
+      </div>
     </div>
   );
 }

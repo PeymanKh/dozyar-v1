@@ -2,7 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
+import { MealCamera } from "./food/MealCamera";
 import { InjectionSheet } from "./sheets/InjectionSheet";
+import { MealSheet } from "./sheets/MealSheet";
 import { LogWeightSheet, WaistSheet } from "./sheets/MeasureSheets";
 import { QuickAddSheet } from "./sheets/QuickAddSheet";
 import { isTabRoute, TabBar } from "./TabBar";
@@ -15,7 +17,7 @@ import { useToday } from "@/lib/use-now";
 /**
  * Frame for the signed-in app. Sends people who haven't signed in (or finished onboarding)
  * to where they belong, turns the onboarding answers into the first logs once, and holds
- * what every screen shares: the tab bar, the logging sheets and the toast.
+ * what every screen shares: the tab bar, the logging sheets (and the meal camera) and the toast.
  */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -51,6 +53,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <InjectionSheet open={sheet === "injection"} onClose={closeSheet} />
       <LogWeightSheet open={sheet === "weight"} onClose={closeSheet} />
       <WaistSheet open={sheet === "waist"} onClose={closeSheet} />
+      <MealSheet open={sheet === "meal"} onClose={closeSheet} />
+      <MealCamera />
       <Toaster aboveTabBar={tabs} />
     </>
   );

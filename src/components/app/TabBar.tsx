@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
-import { ChartSpline, House, PenInjector, Plus, Smile } from "@/components/ui/icons";
+import { AppleIcon, ChartSpline, House, PenInjector, Plus, Smile } from "@/components/ui/icons";
 import { openSheet } from "@/lib/ui-store";
 
 export const TABS = [
   { href: "/today", label: "امروز", icon: House },
+  { href: "/food", label: "تغذیه", icon: AppleIcon },
   { href: "/treatment", label: "درمان", icon: PenInjector },
   { href: "/symptoms", label: "حال من", icon: Smile },
   { href: "/progress", label: "پیشرفت", icon: ChartSpline },
@@ -18,7 +19,7 @@ export function isTabRoute(pathname: string) {
 }
 
 /**
- * Floating glass tab bar with the four sections, and a separate round button at the end
+ * Floating glass tab bar with the five sections, and a separate round button at the end
  * for quick logging (the iOS pattern of a capsule plus one action). The active section has
  * a lavender lens that slides between tabs. Content fades out under the bar.
  */

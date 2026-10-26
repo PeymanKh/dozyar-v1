@@ -8,21 +8,12 @@ import { HeroActions, HeroButton, HeroFrame } from "@/components/app/HeroCard";
 import { Check } from "@/components/ui/icons";
 import { useAppData } from "@/lib/app-store";
 import { toFaDigits } from "@/lib/digits";
-import { daysBetween, formatJalali, isoOf } from "@/lib/jalali";
+import { isoOf, relativeDay } from "@/lib/jalali";
 import { useOnboarding } from "@/lib/onboarding-store";
 import { countdown, formatMg, formatTime, medicationName } from "@/lib/plan";
 import { currentDoseMg, cycleProgress, doseState, suggestSite } from "@/lib/treatment";
 import { openSheet } from "@/lib/ui-store";
 import penIcon from "../../../../public/onboarding/medication.png";
-
-/** «امروز» / «فردا» / «پنجشنبه ۸ آبان» */
-export function relativeDay(iso: string, today: string): string {
-  const d = daysBetween(today, iso);
-  if (d === 0) return "امروز";
-  if (d === 1) return "فردا";
-  if (d === -1) return "دیروز";
-  return formatJalali(iso);
-}
 
 /**
  * Today's one most important thing, on the brand gradient: the next injection. The ring

@@ -149,6 +149,15 @@ export function formatJalali(iso: string, withWeekday = true): string {
   return withWeekday ? `${WEEKDAYS[weekdayOf(iso)]} ${day}` : day;
 }
 
+/** «امروز» / «فردا» / «دیروز» / «پنجشنبه ۸ آبان» */
+export function relativeDay(iso: string, today: string): string {
+  const d = daysBetween(today, iso);
+  if (d === 0) return "امروز";
+  if (d === 1) return "فردا";
+  if (d === -1) return "دیروز";
+  return formatJalali(iso);
+}
+
 export function currentJalaliYear(): number {
   return jalaliOf(todayIso()).jy;
 }
