@@ -33,7 +33,7 @@ export function NameStep() {
   return (
     <StepScreen
       progress={progressFor(1)}
-      backHref={null}
+      backHref="/"
       icon={nameIcon}
       title="چی صدات کنیم؟"
       description="اسم یا اسم مستعار، هرچی دوست داری. فقط خودت می‌بینیش."

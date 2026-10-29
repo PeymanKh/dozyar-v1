@@ -4,7 +4,7 @@ import { AppShell } from "@/components/app/AppShell";
 // frame; skip the instant-navigation check, which expects the page itself in the prerender.
 export const instant = false;
 
-/** Signed-in screens share the shell: tab bar, logging sheets and toasts. */
+/** App screens share the shell: tab bar, logging sheets and toasts. */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return <AppShell>{children}</AppShell>;
 }

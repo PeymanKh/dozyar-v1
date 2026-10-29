@@ -60,7 +60,7 @@ export async function deleteMealPhoto(id: string) {
   await run("readwrite", (s) => s.delete(id)).catch(() => undefined);
 }
 
-/** Erasing data or signing out. */
+/** Erasing data or starting over. */
 export async function clearMealPhotos() {
   await run("readwrite", (s) => s.clear()).catch(() => undefined);
 }

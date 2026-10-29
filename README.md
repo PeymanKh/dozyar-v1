@@ -30,14 +30,13 @@ Design guidance for agents lives in `.claude/skills/apple-design/SKILL.md`.
 
 ## Onboarding
 
-Sign-in, then 11 short screens in 3 sections (spec: `onboarding.pdf`). Answers are saved as people
-go (localStorage for now), and signing in again continues at the first unanswered screen.
+11 short screens in 3 sections (spec: `onboarding.pdf`), straight from the welcome screen. This is a
+prototype: there is no sign-in, and every route opens directly, with no redirects. Answers are saved
+as people go (localStorage for now).
 
 | Route | Screen |
 | --- | --- |
 | `/` | Welcome |
-| `/onboarding/phone` | Mobile number (accepts Persian or Latin digits, +98, paste) |
-| `/onboarding/otp` | 5-digit code, iOS "From Messages" autofill, auto-verify, resend timer |
 | `/onboarding/name` | 1 · Name or nickname |
 | `/onboarding/journey` | 2 · Where you are in the treatment (decides the extra questions) |
 | `/onboarding/medication` | 3 · Medication: brand cards with maker flag, "not on the list" sheet, "not decided yet" |
@@ -50,9 +49,8 @@ go (localStorage for now), and signing in again continues at the first unanswere
 | `/onboarding/reminders` | 10 · Reminders: discreet preview, toggles, permission, iPhone home-screen sheet |
 | `/onboarding/preparing` | Short "preparing your plan" animation built from the answers, then Today |
 
-Sign-in is mocked in `src/lib/auth.ts` until the backend exists: any 5-digit code works except
-`00000`, which shows the "wrong code" state. Motion uses the `motion` library with critically
-damped springs; reduced-motion settings are respected.
+Motion uses the `motion` library with critically damped springs; reduced-motion settings are
+respected.
 
 Glass step icons are generated with `scripts/kie.py` (prompts logged in `design/assets/prompts.jsonl`)
 and sized with `scripts/prep_icon.py`.
@@ -61,8 +59,9 @@ and sized with `scripts/prep_icon.py`.
 
 After onboarding, five tabs in a floating glass tab bar, a round «+» beside it for quick logging
 (food photo, injection, check-in, weight, a glass of water, waist), and pushed screens. Every tab
-header has the assistant (✨) and the profile one tap away. Signed-in visitors to `/` go straight
-back to where they were.
+header has the assistant (✨) and the profile one tap away. Every screen opens directly. The first
+time, the app is filled from the onboarding answers, or with a sample person (مریم, 10 weeks of
+logs) when there are none, so no screen opens empty.
 
 | Route | Screen |
 | --- | --- |
@@ -79,7 +78,7 @@ back to where they were.
 | `/learn/[id]` | A lesson set for reading; reaching the takeaways marks it read; the next lesson and «از دستیار بپرس» |
 | `/check-in` | Mood, symptoms with severity, appetite, note; `?date=` for a past day, `?mood=` from a face tapped on Today |
 | `/report` | One-page summary for the doctor, now with food (protein, fiber and water on the days logged); «ذخیره به‌صورت PDF» prints it on A4, or share it as text |
-| `/profile` | About me, daily food targets, reminders, the assistant and the lessons, data export, sample data, erase, sign out |
+| `/profile` | About me, daily food targets, reminders, the assistant and the lessons, data export, sample data, erase, start over |
 
 Logging a meal happens in one sheet (`src/components/app/sheets/MealSheet.tsx`), opened from any
 «عکس غذا» button: the photo is recognised (a short scan over the picture), the foods found are
@@ -95,7 +94,7 @@ Everything is stored on the phone for now (MOCK until the Django API exists):
 
 - `src/lib/onboarding-store.ts`: the answers (drug, current dose, schedule, goal, reminders, food targets)
 - `src/lib/app-store.ts`: injections, weights, check-ins, waist measurements, meals and water,
-  seeded once from the answers
+  seeded once from the answers (or from a sample person when there are no answers yet)
 - `src/lib/photo-store.ts`: progress photos in IndexedDB, scaled down, never uploaded
 - `src/lib/meal-photos.ts`: meal photos in IndexedDB, small, never uploaded
 - `src/lib/chat-store.ts` and `src/lib/learn-store.ts`: the conversation and the lessons read

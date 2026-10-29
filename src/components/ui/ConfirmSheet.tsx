@@ -4,7 +4,7 @@ import { Button } from "./Button";
 import { Sheet } from "./Sheet";
 
 /**
- * Asking before something that cannot be undone (signing out, erasing data). Used sparingly:
+ * Asking before something that cannot be undone (starting over, erasing data). Used sparingly:
  * everyday deletions are undone from the toast instead.
  */
 export function ConfirmSheet({

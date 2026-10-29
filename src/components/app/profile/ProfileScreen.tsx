@@ -20,11 +20,11 @@ import {
   EyeOff,
   FileText,
   Height,
-  LogOut,
   MessageSquare,
   Minus,
   Moon,
   Plus,
+  RotateCcw,
   Sparkles,
   Target,
   Trash,
@@ -54,20 +54,15 @@ import {
 import { formatKg } from "@/lib/plan";
 import { toast } from "@/lib/ui-store";
 
-type ProfileSheet = "name" | "year" | "height" | "goal" | "targets" | "demo" | "erase" | "signout" | null;
+type ProfileSheet = "name" | "year" | "height" | "goal" | "targets" | "demo" | "erase" | "restart" | null;
 
 const DEFAULT_REMINDERS: ReminderAnswer = { discreet: true, nightBefore: false, smsBackup: false, channel: "off" };
-
-/** «۰۹۱۲ ۳۴۵ ۶۷۸۹» */
-function formatMobile(mobile: string) {
-  return toFaDigits(`${mobile.slice(0, 4)} ${mobile.slice(4, 7)} ${mobile.slice(7)}`);
-}
 
 /**
  * The person and their settings, in grouped rows like iOS Settings: about me (each row
  * opens a small sheet), daily food targets, reminders (switches), help (the assistant and the
  * lessons), data (report, export, sample data, erase),
- * and signing out. The one disclaimer that matters closes the page.
+ * and starting over. The one disclaimer that matters closes the page.
  */
 export function ProfileScreen() {
   const router = useRouter();
@@ -117,11 +112,6 @@ export function ProfileScreen() {
             {name?.charAt(0) || "؟"}
           </span>
           <p className="mt-3 text-title-section text-text-primary">{name || "بدون نام"}</p>
-          {o.mobile ? (
-            <p className="text-caption text-text-secondary" dir="ltr">
-              {formatMobile(o.mobile)}
-            </p>
-          ) : null}
         </div>
 
         <Group title="درباره‌ی من">
@@ -207,7 +197,7 @@ export function ProfileScreen() {
         </Group>
 
         <Card className="overflow-hidden">
-          <Row icon={<LogOut size={18} />} label="خروج از حساب" danger onClick={() => setSheet("signout")} />
+          <Row icon={<RotateCcw size={18} />} label="از اول شروع کن" danger onClick={() => setSheet("restart")} />
         </Card>
 
         <p className="flex items-start justify-center gap-2 px-4 text-center text-caption text-balance text-text-secondary">
@@ -270,11 +260,11 @@ export function ProfileScreen() {
         }}
       />
       <ConfirmSheet
-        open={sheet === "signout"}
+        open={sheet === "restart"}
         onClose={close}
-        title="خروج از حساب"
-        message="فعلاً همه‌چی فقط روی همین گوشیه؛ با خروج، اطلاعاتت از این گوشی پاک می‌شه."
-        confirmLabel="خروج"
+        title="از اول شروع کن"
+        message="همه‌ی جواب‌ها و ثبت‌ها از این گوشی پاک می‌شن و از صفحه‌ی اول شروع می‌کنی."
+        confirmLabel="از اول"
         danger
         onConfirm={() => {
           resetAppData();

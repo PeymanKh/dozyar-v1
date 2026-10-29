@@ -2,10 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { motion, useReducedMotion, type Variants } from "motion/react";
 import { Button } from "@/components/ui/Button";
-import { resumeRoute, useHydrated, useOnboarding } from "@/lib/onboarding-store";
 import { DoseRing } from "./DoseRing";
 import { FloatingObject } from "./FloatingObject";
 import pen from "../../../public/welcome/pen-violet.png";
@@ -16,19 +14,11 @@ import tabletBlush from "../../../public/welcome/tablet-blush.png";
 /**
  * Welcome: a live preview of the app's Today card, surrounded by the real things
  * a person on this treatment holds every week. The card is UI, not a picture: it is what
- * they will see after signing up.
+ * they will see after onboarding.
  */
 export function WelcomeStage() {
   const router = useRouter();
   const reduce = useReducedMotion();
-  const hydrated = useHydrated();
-  const onboarding = useOnboarding();
-  const next = hydrated && onboarding.mobile ? resumeRoute(onboarding) : null;
-
-  // Someone already signed in on this phone goes straight back to where they were.
-  useEffect(() => {
-    if (next) router.replace(next);
-  }, [next, router]);
 
   const item: Variants = {
     hidden: reduce ? { opacity: 0 } : { opacity: 0, y: 14 },
@@ -80,7 +70,7 @@ export function WelcomeStage() {
           اینجا کنارتیم تا مسیرت رو راحت‌تر دنبال کنی.
         </motion.p>
         <motion.div variants={item} className="mt-7 w-full">
-          <Button onClick={() => router.push("/onboarding/phone")}>شروع</Button>
+          <Button onClick={() => router.push("/onboarding/name")}>شروع</Button>
         </motion.div>
         <motion.p variants={item} className="mt-4 text-caption-small text-text-tertiary">
           شروع به معنی پذیرش{" "}

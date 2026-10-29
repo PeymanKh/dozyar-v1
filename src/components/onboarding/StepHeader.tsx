@@ -10,7 +10,7 @@ import { SECTIONS, type Progress } from "@/lib/onboarding-flow";
  * Glass back button on the left (floating layer, so glass is allowed) and the progress bar:
  * one segment per onboarding section, filling left to right (product decision, even in RTL).
  * On arrival the current segment grows from the previous screen to this one, so moving
- * forward is felt. Sign-in screens pass no progress and show only the back button.
+ * forward is felt. Screens outside onboarding (the daily check-in) pass no progress and show only the back button.
  */
 export function StepHeader({ progress, backHref }: { progress?: Progress; backHref?: string | null }) {
   const router = useRouter();

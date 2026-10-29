@@ -58,7 +58,6 @@ export type ReminderAnswer = {
 };
 
 export type OnboardingState = {
-  mobile: string | null;
   /** Screen 1. null = not answered yet, "" = skipped. */
   name: string | null;
   journey: Journey | null;
@@ -78,7 +77,6 @@ export type OnboardingState = {
 
 const KEY = "dozyar.onboarding";
 const EMPTY: OnboardingState = {
-  mobile: null,
   name: null,
   journey: null,
   medication: null,
@@ -113,7 +111,7 @@ export function setOnboarding(patch: Partial<OnboardingState>) {
   listeners.forEach((l) => l());
 }
 
-/** Signing out: forget every answer on this device. */
+/** Starting over: forget every answer on this device. */
 export function resetOnboarding() {
   state = EMPTY;
   try {
@@ -138,19 +136,9 @@ export function isInjecting(journey: Journey | null): boolean {
   return journey === "just-started" || journey === "a-while";
 }
 
-/** Where to continue after signing in: the first screen without an answer (spec: resume mid-way). */
-export function resumeRoute(s: OnboardingState): string {
-  if (s.name === null) return "/onboarding/name";
-  if (!s.journey) return "/onboarding/journey";
-  if (!s.medication) return "/onboarding/medication";
-  if (!s.dose) return "/onboarding/dose";
-  if (!s.schedule) return "/onboarding/schedule";
-  if (!s.about) return "/onboarding/about";
-  if (!s.weight) return "/onboarding/weight";
-  if (s.goal === undefined) return "/onboarding/goal";
-  if (s.worries === null) return "/onboarding/worries";
-  if (!s.reminders) return "/onboarding/reminders";
-  return "/today";
+/** True once any onboarding question has an answer on this device. */
+export function hasAnswers(s: OnboardingState): boolean {
+  return Object.values(s).some((v) => v !== null && v !== undefined);
 }
 
 export function readOnboarding(): OnboardingState {

@@ -1,5 +1,5 @@
 /**
- * Onboarding after sign-in: 11 screens in 3 sections (spec v1).
+ * Onboarding: 11 screens in 3 sections (spec v1).
  * The progress bar has one segment per section; the current segment fills by how far
  * the person is inside that section.
  */

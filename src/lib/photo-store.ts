@@ -64,7 +64,7 @@ export async function deletePhoto(id: string) {
   changed();
 }
 
-/** Erasing data or signing out: no photo stays on the phone. */
+/** Erasing data or starting over: no photo stays on the phone. */
 export async function clearPhotos() {
   await run("readwrite", (s) => s.clear()).catch(() => undefined);
   changed();

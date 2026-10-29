@@ -8,7 +8,7 @@ import { StepScreen } from "./StepScreen";
 import { Button } from "@/components/ui/Button";
 import { TextField } from "@/components/ui/TextField";
 import { toEnDigits } from "@/lib/digits";
-import { findMedication } from "@/lib/medications";
+import { findMedication, MEDICATIONS } from "@/lib/medications";
 import { progressFor } from "@/lib/onboarding-flow";
 import { isInjecting, setOnboarding, useOnboarding, type DoseAnswer } from "@/lib/onboarding-store";
 import { formatMg } from "@/lib/plan";
@@ -37,7 +37,8 @@ const reveal = {
 export function DoseStep() {
   const router = useRouter();
   const { journey, medication, dose } = useOnboarding();
-  const med = medication && "id" in medication ? findMedication(medication.id) : undefined;
+  // Opened directly before a drug is chosen (prototype): show the first drug's doses.
+  const med = medication ? ("id" in medication ? findMedication(medication.id) : undefined) : MEDICATIONS[0];
   const doses = med?.doses ?? [];
   const [pick, setPick] = useState<Pick | null>(null);
 

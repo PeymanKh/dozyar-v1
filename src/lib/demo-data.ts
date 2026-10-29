@@ -23,7 +23,7 @@ import { setRead } from "./learn-store";
 import { LESSON_PATH } from "./learn";
 import { findMedication } from "./medications";
 import { clockNow, type MealType } from "./nutrition";
-import { setOnboarding, type OnboardingState } from "./onboarding-store";
+import { readOnboarding, setOnboarding, type OnboardingState } from "./onboarding-store";
 import { SITES } from "./plan";
 import type { Appetite, Mood, SymptomId } from "./symptoms";
 import { currentDoseMg } from "./treatment";
@@ -223,4 +223,19 @@ export function loadDemoData(o: OnboardingState, today: string, now = new Date()
     weight: { today: end, start },
   });
   replaceAppData({ seeded: true, injections, weights, checkIns, measurements, meals, water });
+}
+
+/**
+ * A whole sample person for a device with nothing saved yet (the same مریم as in the Figma
+ * file): the answers the sample data doesn't make up, then the ten weeks of logs.
+ */
+export function loadSamplePerson(today: string) {
+  setOnboarding({
+    name: "مریم",
+    about: { sex: "female", birthYear: 1365, height: 165 },
+    goal: 75,
+    worries: ["حالت تهوع"],
+    reminders: { discreet: true, nightBefore: false, smsBackup: true, channel: "sms" },
+  });
+  loadDemoData(readOnboarding(), today);
 }
